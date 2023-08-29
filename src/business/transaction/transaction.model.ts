@@ -24,7 +24,6 @@ class TransactionModel {
       _.values(CryptoNetwork).includes(this.transaction.fromNetwork) &&
       _.values(FiatNetwork).includes(this.transaction.toNetwork);
 
-    console.log(this.transaction);
     if (!isOnRamp && !isOffRamp) {
       return {
         isValid: false,
@@ -53,6 +52,13 @@ class TransactionModel {
       return this.transaction.toNetwork;
     }
     return this.transaction.fromNetwork;
+  }
+
+  getFiatAmount(): number {
+    if (this.isOnRamp()) {
+      return Number(this.transaction.fromAmount);
+    }
+    return Number(this.transaction.exchangedAmount);
   }
 }
 

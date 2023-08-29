@@ -1,3 +1,4 @@
+import _ from "lodash";
 import {
   ITransaction,
   ICustomer,
@@ -9,9 +10,11 @@ import { Providers } from "@app/business/provider/provider.interface";
 import { IUsecaseOutput } from "@app/business/common/interfaces/usecase_output.interface";
 import { getFiatNetworkFeeUC } from "@app/business/fiatNetwork/usecases/getFiatNetworkFeeUC";
 import { ICryptoNetworkRepo } from "@app/business/cryptoNetwork/cryptoNetwork.interface";
+import { getExchangeRateUC } from "@app/business/provider/usecases/getExchangeRateUC";
+import { getProviderFeeUC } from "@app/business/provider/usecases/getProviderFeeUC";
 
 export interface ICalculateTransactionFeeReq {
-  transaction: ITransaction;
+  transaction: Omit<ITransaction, "exchangedAmount">;
   customer: ICustomer;
   availableProviders: string[];
 }
@@ -37,14 +40,47 @@ export const calculateTransactionFeeUC = async (
       result: null,
     };
   }
+  if (!transaction.isOnRamp()) {
+    transaction.transaction.exchangedAmount = getExchangeRateUC({
+      fromAsset: transaction.transaction.fromAsset,
+      toAsset: transaction.transaction.toAsset,
+    });
+  }
+  // fromamount -> feeFromAmount
+  // provider -> feeProvider
+  // exchangedAmount -> feeFromExchangedAmount
   // TODO: implement business logic to calculate total fee
+  const cryptoFee = adapter.cryptoNetworkRepo.getFee(); // 10
+  const fiatFee = getFiatNetworkFeeUC({
+    network: transaction.getFiatNetwork(),
+    fiatAmount: transaction.getFiatAmount(),
+  }); // 3
+  const providerFees = _.map(transaction.availableProviders, (provider) => ({
+    fee: getProviderFeeUC({ provider, amount: transaction.getFiatAmount() }),
+    provider,
+  })).sort((a, b) => a.fee - b.fee);
+  const providerFee = providerFees[0]; //0.3
+
+  // get discount
+  const discount = getDiscountUC({
+    customerTier: transaction.customer.tier,
+    fiatNetwork: transaction.getFiatNetwork(),
+    cryptoNetwork: transaction.getCryptoNetwork(),
+  });
+
+  // in USD
+  const totalFee =
+    cryptoFee * (1 - discount.cryptoDiscount) +
+    fiatFee * (1 - discount.fiatDiscount) +
+    providerFee.fee;
 
   // INFO: just return mock data now
   return {
     result: {
-      fee: 12.26,
+      fee: totalFee,
       asset: SupportedAssetFee.USD,
-      provider: Providers.DUCK,
+      provider: providerFee.provider,
     },
+    error: null,
   };
 };

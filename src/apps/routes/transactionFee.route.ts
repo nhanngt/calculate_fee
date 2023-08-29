@@ -5,6 +5,7 @@ import {
   calculateTransactionFeeUC,
   ICalculateTransactionFeeReq,
 } from "@app/business/transaction/usecases/calculateTransactionFeeUC";
+// hardcode
 import CryptoNetworkService from "@app/infrastructure/cryptoNetworkService/cryptoNetworkService";
 
 const router = Router();

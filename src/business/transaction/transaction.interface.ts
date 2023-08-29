@@ -20,6 +20,7 @@ export interface ITransaction {
   toNetwork: string;
   toAsset: string;
   feeAsset: string;
+  exchangedAmount?: number;
 }
 
 export interface ICustomer {

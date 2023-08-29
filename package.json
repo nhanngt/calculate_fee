@@ -9,7 +9,7 @@
     "dev:watch": "nodemon",
     "dev": "dotenv -e .env npm run dev:watch",
     "lint": "eslint . --ext .ts",
-    "test:mocha": "mocha --require ts-node/register --require tsconfig-paths/register \"./src/**/*.spec.ts\"",
+    "test:mocha": "mocha --require ts-node/register --require tsconfig-paths/register \"./src/**/*.unit-test.spec.ts\"",
     "test": "dotenv -e ./src/test/.env npm run test:mocha"
   },
   "keywords": [],
